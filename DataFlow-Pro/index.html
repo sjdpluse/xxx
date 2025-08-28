@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataFlow Pro - Advanced Database Management System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alasql@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: #e4e4e7;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: linear-gradient(45deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(-100px) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            90% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            animation: pulse-ring 4s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+        }
+
+        /* Intro Screen */
+        #introScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #introScreen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .intro-content {
+            max-width: 700px;
+            padding: 20px;
+            animation: intro-fade-in 1s ease-out;
+        }
+
+        @keyframes intro-fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .intro-logo {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s ease-in-out infinite alternate;
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .intro-tagline {
+            font-size: 1.2rem;
+            font-size: 1.1rem;
+            color: rgba(244, 244, 245, 0.7);
+            margin: 20px 0 40px;
+            line-height: 1.6;
+            animation: tagline-fade-in 1.5s ease-out 0.5s both;
+        }
+
+        @keyframes tagline-fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .developer-name {
+            color: #8b5cf6;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            height: 2rem;
+        }
+
+        .btn-large {
+            padding: 18px 40px;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            background: rgba(15, 15, 23, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            z-index: -1;
+        }
+
+        .header h1 {
+            color: #f8fafc;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s ease-in-out infinite alternate;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        @keyframes glow {
+            from { 
+                filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+                transform: scale(1);
+            }
+            to { 
+                filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.8));
+                transform: scale(1.02);
+            }
+        }
+
+        .header p {
+            color: rgba(244, 244, 245, 0.8);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(30, 30, 46, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 50px;
+            color: #f8fafc;
+            font-weight: 600;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .stat-item:hover::before {
+            left: 100%;
+        }
+
+        .stat-item:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .sidebar {
+            background: rgba(15, 15, 23, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h3 {
+            color: #f8fafc;
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 20px;
+            color: rgba(244, 244, 245, 0.7);
+            cursor: pointer;
+            border-radius: 16px;
+            margin-bottom: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .nav-item:hover::before, .nav-item.active::before {
+            width: 100%;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: #f8fafc;
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateX(8px);
+        }
+
+        #mainApp {
+            animation: main-fade-in 0.8s ease-out;
+        }
+
+        @keyframes main-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .main-content {
+            background: rgba(15, 15, 23, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 35px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            min-height: 700px;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .content-header h2 {
+            font-size: 2rem;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .search-section {
+            margin-bottom: 30px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 16px 24px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            font-size: 16px;
+            background: rgba(30, 30, 46, 0.6);
+            color: #f8fafc;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: rgba(244, 244, 245, 0.5);
+        }
+
+        .data-table {
+            background: rgba(30, 30, 46, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+            color: white;
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 18px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        th {
+            background: rgba(30, 30, 46, 0.8);
+            font-weight: 600;
+            color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: sticky;
+            top: 0;
+        }
+
+        th:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        td {
+            color: rgba(244, 244, 245, 0.9);
+        }
+
+        tr:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .status-new {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-contacted {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        td.truncate {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #6366f1;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* View Profile Modal Styles */
+        .view-profile-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .view-profile-avatar {
+            width: 180px;
+            height: 180px;
+            border-radius: 24px;
+            object-fit: cover;
+            background: #6366f1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            font-weight: 700;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .view-profile-details h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 10px;
+        }
+
+        .view-profile-details .role {
+            font-size: 1.2rem;
+            color: #8b5cf6;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            background: rgba(30, 30, 46, 0.8);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .detail-item .label {
+            font-size: 12px;
+            color: rgba(244, 244, 245, 0.6);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .detail-item .value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #f8fafc;
+            word-wrap: break-word;
+        }
+
+        .user-profile-cell {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .user-id {
+            font-size: 12px;
+            color: rgba(244, 244, 245, 0.6);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px 30px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .profile-pic-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .profile-pic-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: rgba(30, 30, 46, 0.8);
+            border: 2px dashed rgba(99, 102, 241, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: rgba(15, 15, 23, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: scale(0.9) translateY(50px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #f8fafc;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            font-size: 14px;
+            background: rgba(30, 30, 46, 0.8);
+            color: #f8fafc;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .analytics-card {
+            background: rgba(30, 30, 46, 0.6);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analytics-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #f8fafc;
+            margin-bottom: 8px;
+            animation: countUp 2s ease-out;
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-label {
+            color: rgba(244, 244, 245, 0.7);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(99, 102, 241, 0.2);
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 18px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .page-btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(30, 30, 46, 0.6);
+            color: #f8fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .page-btn:hover, .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        /* Live Data Indicator */
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #10b981;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro Screen -->
+    <div id="introScreen">
+        <div class="intro-content">
+            <h1 class="intro-logo"><i class="fas fa-database"></i> DataFlow Pro</h1>
+            <p class="intro-tagline">Your complete solution for advanced data management, real-time analytics, and powerful insights.</p>
+            <button id="startAppBtn" class="btn btn-primary btn-large">
+                <i class="fas fa-rocket"></i> Get Started
+            </button>
+            <p id="developer-name" class="developer-name" style="margin-top: 40px;"></p>
+        </div>
+    </div>
+
+    <div id="mainApp" style="display: none;">
+        <!-- Animated Background -->
+        <div class="bg-animation" id="bgAnimation">
+            <div class="pulse-ring" style="top: 10%; left: 20%;"></div>
+            <div class="pulse-ring" style="top: 70%; right: 15%; animation-delay: 2s;"></div>
+        </div>
+
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <h1><i class="fas fa-database"></i> DataFlow Pro</h1>
+                <p>Advanced Database Management System with Real-time Analytics & AI-Powered Insights</p>
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <i class="fas fa-table"></i>
+                        <span id="tableCount">12 Tables</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span id="recordCount">24,856 Records</span>
+                    </div>
+                    <div class="stat-item live-indicator">
+                        <div class="live-dot"></div>
+                        <span>Live Sync</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>256-bit Encrypted</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Grid -->
+            <div class="main-grid">
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <h3><i class="fas fa-layer-group"></i> Navigation</h3>
+                    <div class="nav-item active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" data-section="tables">
+                        <i class="fas fa-table"></i>
+                        <span>Data Tables</span>
+                    </div>
+                    <div class="nav-item" data-section="analytics">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Analytics</span>
+                    </div>
+                    <div class="nav-item" data-section="queries">
+                        <i class="fas fa-search"></i>
+                        <span>Query Builder</span>
+                    </div>
+                    <div class="nav-item" data-section="backup">
+                        <i class="fas fa-download"></i>
+                        <span>Backup & Export</span>
+                    </div>
+                    <div class="nav-item" data-section="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </div>
+                    <div class="nav-item" data-section="help">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Help & Docs</span>
+                    </div>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="main-content">
+                    <!-- Dashboard Section -->
+                    <section id="dashboard" class="content-section">
+                        <div class="content-header">
+                            <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+                            <button class="btn btn-primary" onclick="refreshDashboard()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+
+                        <div class="analytics-grid">
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #10b981, #059669);">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="card-value" id="userCount">1,247</div>
+                                <div class="card-label">Active Users</div>
+                            </div>
+
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #ef4444, #dc2626);">
+                                    <i class="fas fa-user-slash"></i>
+                                </div>
+                                <div class="card-value" id="inactiveUserCount">0</div>
+                                <div class="card-label">Inactive Users</div>
+                            </div>
+
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #f59e0b, #d97706);">
+                                    <i class="fas fa-user-clock"></i>
+                                </div>
+                                <div class="card-value" id="pendingUserCount">0</div>
+                                <div class="card-label">Pending Users</div>
+                            </div>
+
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #3b82f6, #2563eb);">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="card-value" id="newUserCount">0</div>
+                                <div class="card-label">New Leads</div>
+                            </div>
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed);">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div class="card-value" id="contactedUserCount">0</div>
+                                <div class="card-label">Contacted Leads</div>
+                            </div>
+
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #6366f1, #8b5cf6);">
+                                    <i class="fas fa-list-ol"></i>
+                                </div>
+                                <div class="card-value" id="totalRecordCount">0</div>
+                                <div class="card-label">Total Records</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tables Section -->
+                    <section id="tables" class="content-section" style="display: none;">
+                        <div class="content-header">
+                            <h2><i class="fas fa-table"></i> Data Tables</h2>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="openModal('addRecordModal')">
+                                    <i class="fas fa-plus"></i> Add Record
+                                </button>
+                                <button class="btn" style="background: #1e293b;" onclick="refreshTable()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                                <button class="btn btn-danger" onclick="createNewTable()">
+                                    <i class="fas fa-magic"></i> New Table
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="search-section">
+                            <div class="search-bar">
+                                <input type="text" class="search-input" id="searchInput" placeholder="Search records by name, email, or ID...">
+                                <button class="btn btn-primary" onclick="searchRecords()">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3><i class="fas fa-database"></i> User Database</h3>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn btn-success" onclick="exportData('csv')">
+                                        <i class="fas fa-file-csv"></i> Export CSV
+                                    </button>
+                                    <button class="btn btn-success" onclick="exportData('json')">
+                                        <i class="fas fa-file-code"></i> Export JSON
+                                    </button>
+                                    <button class="btn btn-danger" onclick="exportData('pdf')">
+                                        <i class="fas fa-file-pdf"></i> Export PDF
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="loading" id="tableLoading">
+                                <div class="spinner"></div>
+                                <p>Loading database records...</p>
+                            </div>
+
+                            <table id="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 300px;" onclick="sortTable('name')">User <i class="fas fa-sort"></i></th>
+                                        <th onclick="sortTable('email')">Email <i class="fas fa-sort"></i></th>
+                                        <th onclick="sortTable('status')">Status <i class="fas fa-sort"></i></th>
+                                        <th>Docs</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="pagination">
+                            <!-- Pagination buttons will be populated by JavaScript -->
+                        </div>
+                    </section>
+
+                    <!-- Other sections (placeholders) -->
+                    <section id="analytics" class="content-section" style="display: none;">
+                        <div class="content-header">
+                            <h2><i class="fas fa-chart-bar"></i> Analytics</h2>
+                        </div>
+                        <p>Visual representation of your current dataset. Analyze trends and user distribution.</p>
+                        <div class="analytics-grid" style="grid-template-columns: 1.5fr 1fr; align-items: start; margin-top: 20px;">
+                            <div style="background: rgba(30, 30, 46, 0.6); padding: 30px; border-radius: 16px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                                <h3 style="font-size: 1.2rem; color: white; margin-bottom: 20px; text-align: center;">User Growth (Last 12 Months)</h3>
+                                <canvas id="userGrowthChart"></canvas>
+                            </div>
+                            <div style="background: rgba(30, 30, 46, 0.6); padding: 30px; border-radius: 16px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                                <h3 style="font-size: 1.2rem; color: white; margin-bottom: 20px; text-align: center;">User Status Distribution</h3>
+                                <canvas id="userStatusChart"></canvas>
+                            </div>
+                        </div>
+                        <div id="analyticsInsights" class="analytics-card" style="margin-top: 20px;">
+                            <div class="card-icon" style="background: linear-gradient(45deg, #ec4899, #be185d);"><i class="fas fa-lightbulb"></i></div>
+                            <h3 style="font-size: 1.5rem; margin-bottom: 15px;">Key Insights</h3>
+                            <div id="insightsContent" class="card-label" style="line-height: 1.8;">
+                                <!-- Insights will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </section>
+                    <section id="queries" class="content-section" style="display: none;">
+                        <div class="content-header">
+                            <h2><i class="fas fa-search"></i> Query Builder</h2>
+                        </div>
+                        <div class="form-group">
+                            <label for="queryText" class="form-label">SQL Query</label>
+                            <textarea id="queryText" class="form-control" rows="8" placeholder="SELECT * FROM users WHERE status = 'active';"></textarea>
+                        </div>
+                        <button class="btn btn-success" onclick="runQuery()">
+                            <i class="fas fa-play"></i> Run Query
+                        </button>
+                        <div class="data-table" style="margin-top: 30px;">
+                            <div class="table-header">
+                                <h3><i class="fas fa-list"></i> Query Results</h3>
+                            </div>
+                            <div id="queryResult" style="padding: 20px; color: #9ca3af; min-height: 100px; font-family: 'Courier New', Courier, monospace;">
+                                Results will be shown here...
+                            </div>
+                        </div>
+                    </section>
+                    <section id="backup" class="content-section" style="display: none;">
+                        <div class="content-header">
+                            <h2><i class="fas fa-download"></i> Backup & Export</h2>
+                        </div>
+                        <p>Create backups of your database or export specific tables.</p>
+                        <div class="analytics-grid" style="margin-top: 20px;">
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #6366f1, #8b5cf6);">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 15px;">Full Backup</h3>
+                                <p class="card-label" style="margin-bottom: 20px;">Create a complete backup of all data and schema.</p>
+                                <button class="btn btn-primary" onclick="showToast('Starting full backup...')"><i class="fas fa-play-circle"></i> Start Full Backup</button>
+                            </div>
+                            <div class="analytics-card">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #10b981, #059669);">
+                                    <i class="fas fa-file-export"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 15px;">Export Table</h3>
+                                <p class="card-label" style="margin-bottom: 20px;">Export the 'Users' table to CSV, JSON, or XML.</p>
+                                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                                    <button class="btn btn-success" onclick="exportData('csv')"><i class="fas fa-file-csv"></i> Export as CSV</button>
+                                    <button class="btn btn-primary" onclick="exportData('json')"><i class="fas fa-file-code"></i> Export as JSON</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="settings" class="content-section" style="display: none;">
+                        <div class="content-header">
+                            <h2><i class="fas fa-cog"></i> Settings</h2>
+                        </div>
+                        <form onsubmit="event.preventDefault(); showToast('Settings saved!', 'success');">
+                            <div class="form-group">
+                                <label for="dbName" class="form-label">Database Name</label>
+                                <input type="text" id="dbName" class="form-control" value="DataFlow Pro DB">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Theme</label>
+                                <select class="form-control">
+                                    <option>Dark (Default)</option>
+                                    <option disabled>Light (Coming Soon)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Save Settings</button>
+                        </form>
+                    </section>
+                    <section id="help" class="content-section" style="display: none;">
+                        <div class="content-header">
+                            <h2><i class="fas fa-question-circle"></i> Help & Support</h2>
+                        </div>
+                        <p>If you need help, have questions, or want to provide feedback, please feel free to reach out through any of the channels below.</p>
+                        <div class="analytics-grid" style="margin-top: 30px;">
+                            <a href="https://www.instagram.com/thedorcci?utm_source=qr" target="_blank" class="analytics-card" style="text-decoration: none; color: inherit;">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);">
+                                    <i class="fab fa-instagram"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Instagram</h3>
+                                <p class="card-label">@thedorcci</p>
+                            </a>
+                            <a href="https://t.me/SJDPLUS" target="_blank" class="analytics-card" style="text-decoration: none; color: inherit;">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #0088cc, #00a0e9);">
+                                    <i class="fab fa-telegram-plane"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Telegram</h3>
+                                <p class="card-label">@SJDPLUS</p>
+                            </a>
+                            <a href="https://wa.me/923321057543" target="_blank" class="analytics-card" style="text-decoration: none; color: inherit;">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #25d366, #128c7e);">
+                                    <i class="fab fa-whatsapp"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">WhatsApp</h3>
+                                <p class="card-label">+92 332 1057543</p>
+                            </a>
+                            <a href="tel:+923321057543" class="analytics-card" style="text-decoration: none; color: inherit;">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #6366f1, #8b5cf6);">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Phone Call</h3>
+                                <p class="card-label">+92 332 1057543</p>
+                            </a>
+                            <a href="mailto:sajadalimohammadi394@gmail.com" class="analytics-card" style="text-decoration: none; color: inherit;">
+                                <div class="card-icon" style="background: linear-gradient(45deg, #4b5563, #1f2937);">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Email</h3>
+                                <p class="card-label">sajadalimohammadi394@gmail.com</p>
+                            </a>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+
+        <!-- Add/Edit Record Modal -->
+        <div id="addRecordModal" class="modal">
+            <div class="modal-content" style="width: 95%; max-width: 1400px; height: 90vh; display: flex; flex-direction: column;">
+                <h2 id="modalTitle" style="margin-bottom: 20px; color: #f8fafc;">Add New Record</h2>
+                <form id="recordForm" style="flex-grow: 1; overflow-y: auto; padding-right: 15px;">
+                    <input type="hidden" id="recordId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" id="first_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" id="last_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role / Title</label>
+                            <input type="text" id="role" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" id="email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" id="phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="company" class="form-label">Company</label>
+                            <input type="text" id="company" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="assigned_to" class="form-label">Assigned To</label>
+                            <input type="text" id="assigned_to" class="form-control">
+                        </div>
+                        <div class="form-group full-width profile-pic-group">
+                            <img id="profilePicPreview" src="" alt="Preview" class="profile-pic-preview">
+                            <div style="flex: 1;">
+                                <label for="profile_pic_file" class="form-label">Profile Picture</label>
+                                <input type="file" id="profile_pic_file" class="form-control" accept="image/*">
+                                <input type="hidden" id="profile_pic_url">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="documents" class="form-label">Documents (comma-separated names)</label>
+                            <textarea id="documents" class="form-control" rows="2" placeholder="contract.pdf, invoice_q1.docx, ..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" class="form-control">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="pending">Pending</option>
+                                <option value="new">New</option>
+                                <option value="contacted">Contacted</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea id="notes" class="form-control" rows="4"></textarea>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px;">
+                        <button type="button" class="btn btn-danger" onclick="closeModal('addRecordModal')">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- View Record Modal -->
+        <div id="viewRecordModal" class="modal">
+            <div class="modal-content" style="max-width: 800px;">
+                <div id="viewRecordContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
+                    <button type="button" class="btn btn-success" id="downloadProfileBtn" onclick="">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="closeModal('viewRecordModal')">Close</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast"></div>
+
+        <footer style="text-align: center; padding: 20px; color: rgba(244, 244, 245, 0.4); font-size: 14px; margin-top: 20px;">
+            Designed and developed by Sajad Mohammadi
+        </footer>
+    </div>
+
+    <script>
+        const DB_KEY = 'dataflow_pro_data';
+        let mockData = [];
+        let currentData = [...mockData];
+        let userGrowthChart = null;
+        let userStatusChart = null;
+        let sortDirection = {};
+
+        // --- Supabase Setup ---
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // جایگزین کنید
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // جایگزین کنید
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const BUCKET_NAME = 'avatars'; // نام باکت در Supabase Storage
+
+        // DOM Elements
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const tableLoading = document.getElementById('tableLoading');
+        const navItems = document.querySelectorAll('.nav-item');
+        const contentSections = document.querySelectorAll('.content-section');
+        const recordForm = document.getElementById('recordForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const recordIdInput = document.getElementById('recordId');
+        const tableCountEl = document.getElementById('tableCount');
+        const profilePicFileInput = document.getElementById('profile_pic_file');
+        const profilePicUrlInput = document.getElementById('profile_pic_url');
+        const profilePicPreview = document.getElementById('profilePicPreview');
+        const recordCountEl = document.getElementById('recordCount');
+        const userCountEl = document.getElementById('userCount');
+
+        // --- Core Functions ---
+
+        function renderTable(data) {
+            tableLoading.classList.add('show');
+            tableBody.innerHTML = '';
+            setTimeout(() => {
+                if (data.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px;">No records found.</td></tr>`;
+                } else {
+                    data.forEach(row => {
+                        const fullName = `${row.first_name || ''} ${row.last_name || ''}`.trim();
+                        const avatar = row.profile_pic_url 
+                            ? `<img src="${row.profile_pic_url}" alt="${fullName}" class="avatar">`
+                            : `<div class="avatar">${(row.first_name?.[0] || '')}${(row.last_name?.[0] || '')}</div>`;
+
+                        const docCount = row.documents ? row.documents.length : 0;
+                        const docButton = `<button class="btn" style="padding: 5px 10px; font-size: 12px; background: #1e293b;" onclick="event.stopPropagation(); showToast('${docCount} documents found.')">${docCount} <i class="fas fa-folder"></i></button>`;
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="user-profile-cell">
+                                ${avatar}
+                                <div class="user-info">
+                                    <div class="user-name truncate" title="${fullName}">${fullName}</div>
+                                    <div class="user-id">ID: ${row.id}</div>
+                                </div>
+                            </td>
+                            <td class="truncate" title="${row.email}">${row.email || 'N/A'}</td>
+                            <td><span class="status-badge status-${row.status}">${row.status}</span></td>
+                            <td>${docButton}</td>
+                            <td class="action-buttons">
+                                <button class="action-btn edit-btn" onclick="viewRecord(${row.id})"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit-btn" onclick="editRecord(${row.id})"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-btn" onclick="deleteRecord(${row.id})"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                }
+                tableLoading.classList.remove('show');
+            }, 500); // Simulate loading
+        }
+
+        function sortTable(key) {
+            const direction = sortDirection[key] === 'asc' ? 'desc' : 'asc';
+            sortDirection = { [key]: direction };
+            
+            const sortKey = key === 'name' ? 'first_name' : key;
+            currentData.sort((a, b) => {
+                if (a[sortKey] < b[sortKey]) return direction === 'asc' ? -1 : 1;
+                if (a[sortKey] > b[sortKey]) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable(currentData);
+        }
+
+        async function searchRecords() {
+            const searchTerm = searchInput.value.toLowerCase();
+            tableLoading.classList.add('show');
+            // Search in first_name, last_name, or email
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+            
+            tableLoading.classList.remove('show');
+            if (error) return showToast('Search failed', 'error');
+
+            currentData = data;
+            renderTable(currentData);
+        }
+
+        async function loadData() {
+            tableLoading.classList.add('show');
+            const { data, error } = await supabase.from('users').select('*').order('id', { ascending: false });
+            tableLoading.classList.remove('show');
+
+            if (error) {
+                console.error('Error loading data:', error);
+                showToast('Failed to load data from database.', 'error');
+                mockData = [];
+            } else {
+                mockData = data;
+            }
+            currentData = [...mockData];
+            if (typeof alasql !== 'undefined') {
+                // Register or update the 'users' table for alasql.
+                // This allows us to run SQL queries directly on the 'users' table name.
+                alasql.tables.users = { data: mockData };
+            }
+        }
+
+        function updateDashboardStats() {
+            const recordCount = mockData.length;
+            const activeUsers = mockData.filter(u => u.status === 'active').length;
+            const inactiveUsers = mockData.filter(u => u.status === 'inactive').length;
+            const pendingUsers = mockData.filter(u => u.status === 'pending').length;
+            const newUsers = mockData.filter(u => u.status === 'new').length;
+            const contactedUsers = mockData.filter(u => u.status === 'contacted').length;
+
+            // Top bar stats
+            tableCountEl.textContent = `${mockData.length > 0 ? 1 : 0} Tables`;
+            recordCountEl.textContent = `${recordCount} Records`;
+            
+            // Dashboard cards
+            userCountEl.textContent = activeUsers;
+            document.getElementById('inactiveUserCount').textContent = inactiveUsers;
+            document.getElementById('pendingUserCount').textContent = pendingUsers;
+            document.getElementById('newUserCount').textContent = newUsers;
+            document.getElementById('contactedUserCount').textContent = contactedUsers;
+            document.getElementById('totalRecordCount').textContent = recordCount;
+        }
+
+        // --- Navigation ---
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const sectionId = item.getAttribute('data-section');
+                contentSections.forEach(section => {
+                    section.style.display = section.id === sectionId ? 'block' : 'none';
+                });
+
+                if (sectionId === 'analytics') {
+                    // Ensure chart is rendered/updated when its tab is visible
+                    renderAnalyticsInsights();
+                    renderAnalyticsCharts();
+                }
+            });
+        });
+
+        // --- Modal & CRUD ---
+        function openModal(modalId, record = null) {
+            const modal = document.getElementById(modalId);
+            recordForm.reset();
+            if (record) {
+                modalTitle.textContent = 'Edit Record';
+                recordIdInput.value = record.id;
+                document.getElementById('first_name').value = record.first_name || '';
+                document.getElementById('last_name').value = record.last_name || '';
+                // For backward compatibility with old data that only has `name`
+                if (!record.first_name && record.name) {
+                    const names = record.name.split(' ');
+                    document.getElementById('first_name').value = names[0];
+                    document.getElementById('last_name').value = names.slice(1).join(' ');
+                }
+                document.getElementById('email').value = record.email;
+                document.getElementById('phone').value = record.phone || '';
+                document.getElementById('company').value = record.company || '';
+                document.getElementById('role').value = record.role || '';
+                document.getElementById('assigned_to').value = record.assigned_to || '';
+                profilePicUrlInput.value = record.profile_pic_url || '';
+                profilePicPreview.src = record.profile_pic_url || ''; // Show existing image
+                document.getElementById('documents').value = record.documents ? record.documents.join(', ') : '';
+                document.getElementById('notes').value = record.notes || '';
+                document.getElementById('status').value = record.status;
+            } else {
+                modalTitle.textContent = 'Add New Record';
+                recordIdInput.value = '';
+                profilePicUrlInput.value = '';
+                profilePicPreview.src = ''; // Clear preview
+            }
+            modal.classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        profilePicFileInput.addEventListener('change', () => {
+            const file = profilePicFileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    profilePicPreview.src = e.target.result;
+                    profilePicUrlInput.value = e.target.result; // Store base64 in hidden input
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+
+        recordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = recordIdInput.value;
+            const recordData = {
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                company: document.getElementById('company').value,
+                role: document.getElementById('role').value,
+                assigned_to: document.getElementById('assigned_to').value,
+                documents: document.getElementById('documents').value.split(',').map(d => d.trim()).filter(d => d),
+                notes: document.getElementById('notes').value,
+                last_contact: new Date().toISOString().split('T')[0], // Update last contact date
+                status: document.getElementById('status').value,
+            };
+
+            // Handle file upload
+            const file = profilePicFileInput.files[0];
+            if (file) {
+                const fileName = `${Date.now()}_${file.name}`;
+                const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file);
+                if (uploadError) {
+                    return showToast(`Image upload failed: ${uploadError.message}`, 'error');
+                }
+                const { data: { publicUrl } } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+                recordData.profile_pic_url = publicUrl;
+            } else {
+                recordData.profile_pic_url = profilePicUrlInput.value; // Keep existing URL if no new file
+            }
+
+            let error;
+            if (id) { // Edit
+                const { error: updateError } = await supabase.from('users').update(recordData).eq('id', id);
+                error = updateError;
+                if (!error) showToast('Record updated successfully!', 'success');
+            } else { // Add
+                recordData.joined = new Date().toISOString().split('T')[0];
+                const { error: insertError } = await supabase.from('users').insert([recordData]);
+                error = insertError;
+                if (!error) showToast('Record added successfully!', 'success');
+            }
+
+            if (error) {
+                console.error('Error saving record:', error);
+                showToast(`Error: ${error.message}`, 'error');
+            } else {
+                await loadData(); // Reload data from DB
+                renderTable(currentData);
+                updateDashboardStats();
+                renderAnalyticsInsights();
+                renderAnalyticsCharts();
+            }
+
+            closeModal('addRecordModal');
+        });
+
+        function editRecord(id) {
+            const record = mockData.find(r => r.id === id);
+            openModal('addRecordModal', record);
+        }
+
+        function viewRecord(id) {
+            const record = mockData.find(r => r.id === id);
+            if (record) {
+                openViewModal(record);
+            }
+        }
+
+        function openViewModal(record) {
+            const modal = document.getElementById('viewRecordModal');
+            const content = document.getElementById('viewRecordContent');
+            const fullName = `${record.first_name || ''} ${record.last_name || ''}`.trim();
+
+            const avatar = record.profile_pic_url
+                ? `<img src="${record.profile_pic_url}" alt="${fullName}" class="view-profile-avatar">`
+                : `<div class="view-profile-avatar">${(record.first_name?.[0] || '')}${(record.last_name?.[0] || '')}</div>`;
+
+            const documentsHTML = record.documents && record.documents.length > 0
+                ? record.documents.map(doc => `<span class="doc-item" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 5px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-file-alt"></i> ${doc}</span>`).join('')
+                : '<span class="value" style="color: rgba(244, 244, 245, 0.6);">No documents</span>';
+
+            content.innerHTML = `
+                <div class="view-profile-header" style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(99, 102, 241, 0.2);">
+                    ${avatar}
+                    <div class="view-profile-details">
+                        <h2>${fullName}</h2>
+                        <p class="role">${record.role || 'No role specified'}</p>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px;">
+                            <span class="status-badge status-${record.status}">${record.status}</span>
+                            <span class="user-id" style="font-size: 14px;">ID: ${record.id}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="detail-item"><div class="label">Email Address</div><div class="value">${record.email || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="label">Phone Number</div><div class="value">${record.phone || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="label">Company</div><div class="value">${record.company || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="label">Assigned To</div><div class="value">${record.assigned_to || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="label">Joined Date</div><div class="value">${record.joined || 'N/A'}</div></div>
+                    <div class="detail-item"><div class="label">Last Contact</div><div class="value">${record.last_contact || 'N/A'}</div></div>
+                </div>
+
+                <div class="detail-item" style="margin-top: 20px;">
+                    <div class="label">Documents</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">${documentsHTML}</div>
+                </div>
+
+                <div class="detail-item" style="margin-top: 20px;">
+                    <div class="label">Notes</div>
+                    <p class="value" style="line-height: 1.6;">${record.notes || 'No notes available.'}</p>
+                </div>
+            `;
+
+            modal.classList.add('show');
+
+            // Fix for PDF download button
+            const downloadBtn = document.getElementById('downloadProfileBtn');
+            downloadBtn.onclick = () => downloadProfileAsPDF(record.id);
+        }
+
+        function downloadProfileAsPDF(userId) {
+            const record = mockData.find(r => r.id === userId);
+            if (!record) {
+                showToast('User not found.', 'error');
+                return;
+            }
+            const fullName = `${record.first_name || ''} ${record.last_name || ''}`.trim();
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // --- Header ---
+                doc.setFontSize(22);
+                doc.setFont('helvetica', 'bold');
+                doc.text('User Profile', 105, 20, { align: 'center' });
+
+                // --- Avatar ---
+                if (record.profile_pic_url && record.profile_pic_url.startsWith('data:image')) {
+                    try {
+                        doc.addImage(record.profile_pic_url, 'JPEG', 20, 30, 40, 40);
+                    } catch (e) {
+                        console.error("Could not add image to PDF:", e);
+                        doc.setFillColor(200, 200, 200);
+                        doc.rect(20, 30, 40, 40, 'F');
+                    }
+                } else {
+                    doc.setFillColor(99, 102, 241);
+                    doc.circle(40, 50, 20, 'F');
+                    doc.setFontSize(24);
+                    doc.setTextColor(255, 255, 255);
+                    const initials = `${record.first_name?.[0] || ''}${record.last_name?.[0] || ''}`.toUpperCase();
+                    doc.text(initials, 40, 53, { align: 'center' });
+                }
+
+                // --- Basic Info ---
+                doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
+                doc.text(fullName, 70, 45);
+                doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 100, 100);
+                doc.text(record.role || 'No role specified', 70, 52);
+                doc.text(`ID: ${record.id} | Status: ${record.status.toUpperCase()}`, 70, 59);
+
+                // --- Details Table ---
+                const profileData = [['Email', record.email], ['Phone', record.phone || 'N/A'], ['Company', record.company || 'N/A'], ['Assigned To', record.assigned_to || 'N/A'], ['Joined Date', record.joined], ['Last Contact', record.last_contact]];
+                doc.autoTable({ startY: 80, head: [['Field', 'Value']], body: profileData, theme: 'grid', headStyles: { fillColor: [99, 102, 241] } });
+
+                // --- Notes ---
+                let finalY = doc.lastAutoTable.finalY + 15;
+                doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text('Notes', 20, finalY);
+                doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+                const notes = doc.splitTextToSize(record.notes || 'No notes available.', 170);
+                doc.text(notes, 20, finalY + 7);
+
+                doc.save(`profile_${fullName.replace(/ /g, '_')}_${record.id}.pdf`);
+                showToast('Profile PDF generated!', 'success');
+
+            } catch (e) {
+                showToast('Failed to generate PDF.', 'error');
+                console.error("PDF Generation Error:", e);
+            }
+        }
+
+        async function deleteRecord(id) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                const { error } = await supabase.from('users').delete().eq('id', id);
+                if (error) {
+                    showToast(`Error deleting record: ${error.message}`, 'error');
+                } else {
+                    await loadData();
+                    renderTable(currentData);
+                    updateDashboardStats();
+                    renderAnalyticsInsights();
+                    renderAnalyticsCharts();
+                    showToast('Record deleted successfully!', 'error');
+                }
+            }
+        }
+
+        // --- UI Helpers ---
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show toast-${type}`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function createBgDots() {
+            const container = document.getElementById('bgAnimation');
+            for (let i = 0; i < 50; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'floating-dot';
+                dot.style.left = `${Math.random() * 100}%`;
+                dot.style.animationDelay = `${Math.random() * 20}s`;
+                dot.style.animationDuration = `${15 + Math.random() * 10}s`;
+                container.appendChild(dot);
+            }
+        }
+
+        function refreshTable() {
+            renderTable(currentData);
+            showToast('Table refreshed!', 'success');
+        }
+
+        function createNewTable() {
+            if (confirm('Are you sure you want to create a new table? This will permanently delete all current data.')) {
+                mockData = [];
+                saveData();
+                currentData = [...mockData];
+                renderTable(currentData);
+                showToast('New empty table created.', 'success');
+            }
+        }
+
+        function typeEffect(element, text, speed) {
+            let i = 0;
+            element.innerHTML = "";
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            cursor.innerHTML = '&nbsp;';
+            element.appendChild(cursor);
+
+            function type() {
+                if (i < text.length) {
+                    element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // --- Section Specific Functions (Query Builder) ---
+        function runQuery() {
+            const query = document.getElementById('queryText').value;
+            const resultEl = document.getElementById('queryResult');
+
+            if (query.trim() === '') {
+                resultEl.innerHTML = '<p style="color: #ef4444;">Query cannot be empty.</p>';
+                return;
+            }
+
+            try {
+                // Use alasql to run the query on our mockData, which is registered as the 'users' table.
+                const results = alasql(query);
+
+                if (results.length === 0) {
+                    resultEl.innerHTML = '<p>Query executed successfully, but returned no results.</p>';
+                } else {
+                    // Render results as a table
+                    let tableHTML = '<table style="width: 100%; border-collapse: collapse; font-family: inherit;"><thead><tr>';
+                    const headers = Object.keys(results[0]);
+                    headers.forEach(header => {
+                        tableHTML += `<th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.2);">${header}</th>`;
+                    });
+                    tableHTML += '</tr></thead><tbody>';
+
+                    results.forEach(row => {
+                        tableHTML += '<tr>';
+                        headers.forEach(header => {
+                            let cellValue = row[header];
+                            if (typeof cellValue === 'object' && cellValue !== null) {
+                                cellValue = JSON.stringify(cellValue);
+                            }
+                            tableHTML += `<td style="padding: 12px 15px; border-bottom: 1px solid rgba(99, 102, 241, 0.1);">${cellValue}</td>`;
+                        });
+                        tableHTML += '</tr>';
+                    });
+
+                    tableHTML += '</tbody></table>';
+                    resultEl.innerHTML = tableHTML;
+                }
+                showToast('Query executed successfully!', 'success');
+            } catch (e) {
+                resultEl.innerHTML = `<p style="color: #ef4444; font-weight: bold;">Query Error:</p><pre style="color: #fca5a5; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; white-space: pre-wrap;">${e.message}</pre>`;
+                showToast('Query failed!', 'error');
+            }
+        }
+
+        function renderAnalyticsCharts() {
+            if (typeof Chart === 'undefined') return;
+
+            // Destroy existing charts to prevent duplicates
+            if (userStatusChart) {
+                userStatusChart.destroy();
+            }
+            if (userGrowthChart) {
+                userGrowthChart.destroy();
+            }
+
+            // --- Chart 1: User Status Distribution (Doughnut) ---
+            const statusCtx = document.getElementById('userStatusChart').getContext('2d');
+            const statusCounts = mockData.reduce((acc, user) => {
+                acc[user.status] = (acc[user.status] || 0) + 1;
+                return acc;
+            }, {});
+
+            userStatusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                plugins: [ChartDataLabels],
+                data: {
+                    labels: ['Active', 'Inactive', 'Pending', 'New', 'Contacted'],
+                    datasets: [{
+                        label: 'User Status',
+                        data: [
+                            statusCounts.active || 0,
+                            statusCounts.inactive || 0,
+                            statusCounts.pending || 0,
+                            statusCounts.new || 0,
+                            statusCounts.contacted || 0
+                        ],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',  // Active - Green
+                            'rgba(239, 68, 68, 0.7)',   // Inactive - Red
+                            'rgba(245, 158, 11, 0.7)',  // Pending - Yellow
+                            'rgba(59, 130, 246, 0.7)',  // New - Blue
+                            'rgba(139, 92, 246, 0.7)'   // Contacted - Purple
+                        ],
+                        borderColor: [
+                            '#10b981',
+                            '#ef4444',
+                            '#f59e0b',
+                            '#3b82f6',
+                            '#8b5cf6'
+                        ],
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#e4e4e7' // Legend text color
+                            }
+                        },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                if (value === 0) return '';
+                                const percentage = (value * 100 / sum).toFixed(1) + '%';
+                                return percentage;
+                            },
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 14,
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Chart 2: User Growth (Line) ---
+            const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
+            const months = Array.from({length: 12}, (_, i) => {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+            }).reverse();
+
+            const userCountsByMonth = months.reduce((acc, month) => ({ ...acc, [month]: 0 }), {});
+
+            mockData.forEach(user => {
+                if (user.joined) {
+                    const joinDate = new Date(user.joined);
+                    const monthYear = joinDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+                    if (userCountsByMonth.hasOwnProperty(monthYear)) {
+                        userCountsByMonth[monthYear]++;
+                    }
+                }
+            });
+
+            userGrowthChart = new Chart(growthCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'New Users',
+                        data: Object.values(userCountsByMonth),
+                        fill: true,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: '#6366f1',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { display: false } // Disable for this chart
+                    }
+                }
+            });
+        }
+
+        function renderAnalyticsInsights() {
+            const insightsContent = document.getElementById('insightsContent');
+            if (mockData.length === 0) {
+                insightsContent.innerHTML = '<p>No data available to generate insights.</p>';
+                return;
+            }
+
+            // Insight 1: Most common status
+            const statusCounts = mockData.reduce((acc, user) => {
+                acc[user.status] = (acc[user.status] || 0) + 1;
+                return acc;
+            }, {});
+            const mostCommonStatus = Object.keys(statusCounts).reduce((a, b) => statusCounts[a] > statusCounts[b] ? a : b);
+            const mostCommonStatusCount = statusCounts[mostCommonStatus];
+            const totalUsers = mockData.length;
+            const mostCommonStatusPercentage = ((mostCommonStatusCount / totalUsers) * 100).toFixed(1);
+
+            // Insight 2: Peak growth month
+            const userCountsByMonth = {};
+            mockData.forEach(user => {
+                if (user.joined) {
+                    const monthYear = new Date(user.joined).toLocaleString('default', { month: 'long', year: 'numeric' });
+                    userCountsByMonth[monthYear] = (userCountsByMonth[monthYear] || 0) + 1;
+                }
+            });
+            const peakMonth = Object.keys(userCountsByMonth).reduce((a, b) => userCountsByMonth[a] > userCountsByMonth[b] ? a : b, null);
+
+            insightsContent.innerHTML = `
+                <p>• The most common user status is <strong>${mostCommonStatus.toUpperCase()}</strong>, representing <strong>${mostCommonStatusPercentage}%</strong> of all records.</p>
+                <p>• The highest user acquisition was observed in <strong>${peakMonth || 'N/A'}</strong>.</p>
+            `;
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof Chart !== 'undefined' && window.ChartDataLabels) {
+                Chart.register(window.ChartDataLabels);
+                Chart.defaults.plugins.datalabels.display = false; // Disable by default
+            }
+
+            const introScreen = document.getElementById('introScreen');
+            const startAppBtn = document.getElementById('startAppBtn');
+            const mainApp = document.getElementById('mainApp');
+
+            startAppBtn.addEventListener('click', () => {
+                introScreen.classList.add('hidden');
+                mainApp.style.display = 'block';
+            });
+            typeEffect(document.getElementById('developer-name'), 'Developed by Sajad Mohammadi', 100);
+
+
+            await loadData();
+            renderTable(currentData);
+            updateDashboardStats();
+            renderAnalyticsInsights();
+            renderAnalyticsCharts();
+            createBgDots();
+            searchInput.addEventListener('keyup', searchRecords);
+        });
+
+        // Dummy functions for buttons
+        function refreshDashboard() { updateDashboardStats(); showToast('Dashboard data refreshed!'); }
+        function exportData(format) {
+            if (mockData.length === 0) {
+                showToast('No data to export.', 'error');
+                return;
+            }
+
+            if (format === 'pdf') {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+
+                    const tableColumn = ["ID", "First Name", "Last Name", "Email", "Phone", "Company", "Status", "Assigned To", "Joined", "Avatar URL", "Documents"];
+                    const tableRows = [];
+
+                    mockData.forEach(record => {
+                        const recordData = [
+                            record.id, record.first_name || '', record.last_name || '', record.email, record.phone || 'N/A',
+                            record.company || 'N/A', record.status, record.assigned_to || 'N/A', record.joined,
+                            record.profile_pic_url || 'N/A', (record.documents || []).join('; ')
+                        ];
+                        tableRows.push(recordData);
+                    });
+
+                    doc.autoTable({
+                        head: [tableColumn],
+                        body: tableRows,
+                        startY: 20,
+                    });
+                    doc.text("User Data Report - DataFlow Pro", 14, 15);
+                    doc.save(`dataflow_report_${new Date().toISOString().slice(0,10)}.pdf`);
+                    showToast('PDF report generated successfully!', 'success');
+                } catch (e) {
+                    showToast('Failed to generate PDF.', 'error');
+                    console.error("PDF Generation Error:", e);
+                }
+                return;
+            }
+
+            const filename = `dataflow_export_${new Date().toISOString().slice(0,10)}.${format}`;
+            let mimeType;
+            let fileContent;
+
+            if (format === 'json') {
+                mimeType = 'application/json';
+                fileContent = JSON.stringify(mockData, null, 2);
+            } else if (format === 'csv') {
+                mimeType = 'text/csv;charset=utf-8;';
+                const headers = Object.keys(mockData[0]);
+                const csvRows = [headers.join(',')]; // Header row
+
+                mockData.forEach(row => {
+                    const values = headers.map(header => {
+                        const escaped = ('' + (row[header] || '')).replace(/"/g, '""'); // Escape double quotes and handle null/undefined
+                        return `"${escaped}"`;
+                    });
+                    csvRows.push(values.join(','));
+                });
+                fileContent = csvRows.join('\n');
+            } else {
+                showToast('Unsupported format.', 'error');
+                return;
+            }
+
+            const blob = new Blob([fileContent], { type: mimeType });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+
+            showToast(`Exported data as ${format.toUpperCase()}!`, 'success');
+        }
+
+    </script>
+
+</body>
+</html>
